@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGIS - webumkm</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f6f8;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1f4e79;
+            font-size: 22px;
+            margin-top: 0;
+            border-bottom: 2px solid #1f4e79;
+            padding-bottom: 10px;
+        }
+        p.subtitle {
+            color: #666;
+            margin-top: -5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .menu-item {
+            border: 1px solid #e1e4e8;
+            border-radius: 5px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .menu-item:hover {
+            background: #f0f4f8;
+            border-color: #bcd0e6;
+        }
+        .menu-text h3 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #222;
+        }
+        .menu-text p {
+            margin: 0;
+            font-size: 13px;
+            color: #555;
+        }
+        .btn-link {
+            background-color: #1f4e79;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 4px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .btn-link:hover {
+            background-color: #163755;
+        }
+        footer {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Project WebGIS (webumkm)</h1>
+        <p class="subtitle">Praktikum Sistem Informasi Geografis menggunakan Python Django Framework & Leaflet.js</p>
+
+        <ul class="menu-list">
+            <li class="menu-item">
+                <div class="menu-text">
+                    <h3>1. Halaman Welcome</h3>
+                    <p>Testing view awal Django mengembalikan respon HttpResponse.</p>
+                </div>
+                <a href="/welcome/" class="btn-link">Buka Halaman</a>
+            </li>
+
+            <li class="menu-item">
+                <div class="menu-text">
+                    <h3>2. Peta Indonesia</h3>
+                    <p>Peta interaktif Indonesia berbasis Leaflet, basemap OSM, citra satelit, dan marker Jakarta.</p>
+                </div>
+                <a href="/petasatu/" class="btn-link">Buka Peta</a>
+            </li>
+
+            <li class="menu-item">
+                <div class="menu-text">
+                    <h3>3. Peta Wilayah Jabodetabek</h3>
+                    <p>Peta wilayah Jakarta, Bogor, Depok, Tangerang, Bekasi dengan panel kontrol pilih kota.</p>
+                </div>
+                <a href="/petadua/" class="btn-link">Buka Peta</a>
+            </li>
+
+            <li class="menu-item">
+                <div class="menu-text">
+                    <h3>4. Peta Gempa Terkini (BMKG)</h3>
+                    <p>Visualisasi 15 gempa bumi terkini (M 5.0+) secara realtime dari data JSON BMKG.</p>
+                </div>
+                <a href="/gempabumi/" class="btn-link">Buka Peta</a>
+            </li>
+        </ul>
+
+        <footer>
+            Server lokal aktif pada port 8000
+        </footer>
+    </div>
+</body>
+</html>

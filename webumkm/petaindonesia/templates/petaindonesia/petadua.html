@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peta Jabodetabek</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        header {
+            padding: 10px 16px;
+            background: #1f4e79;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 19px;
+            font-weight: 600;
+        }
+        header a {
+            color: #dbeafe;
+            text-decoration: none;
+            font-size: 14px;
+            margin-left: 12px;
+        }
+        header a:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+        #map-container {
+            position: relative;
+            height: calc(100vh - 44px);
+            width: 100%;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        /* Panel Pilih Kota di pojok kanan atas */
+        .panel-kota {
+            position: absolute;
+            top: 15px;
+            right: 65px;
+            z-index: 1000;
+            background: #ffffff;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            padding: 10px 12px;
+            width: 150px;
+            border: 1px solid #ccc;
+        }
+        .panel-kota h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+        .btn-kota {
+            display: block;
+            width: 100%;
+            padding: 6px 8px;
+            margin-bottom: 5px;
+            background: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #222;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-kota:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+        .btn-kota:last-child {
+            margin-bottom: 0;
+            margin-top: 6px;
+            background: #f7f7f7;
+            font-weight: 500;
+        }
+        .btn-kota:last-child:hover {
+            background: #e9e9e9;
+        }
+    </style>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+<body>
+    <header>
+        <h1>Peta Jabodetabek: Jakarta, Bogor, Depok, Tangerang, Bekasi</h1>
+        <div>
+            <a href="/">Kembali ke Menu</a>
+        </div>
+    </header>
+
+    <div id="map-container">
+        <!-- Panel Pilihan Kota Sesuai Praktikum -->
+        <div class="panel-kota">
+            <h4>Pilih kota</h4>
+            <button class="btn-kota" onclick="pilihKota('jakarta')">Jakarta</button>
+            <button class="btn-kota" onclick="pilihKota('bogor')">Bogor</button>
+            <button class="btn-kota" onclick="pilihKota('depok')">Depok</button>
+            <button class="btn-kota" onclick="pilihKota('tangerang')">Tangerang</button>
+            <button class="btn-kota" onclick="pilihKota('bekasi')">Bekasi</button>
+            <button class="btn-kota" onclick="tampilkanSemua()">Tampilkan semua</button>
+        </div>
+
+        <div id="map"></div>
+    </div>
+
+    <script>
+        // Koordinat titik kota Jabodetabek
+        const dataKota = {
+            jakarta: { nama: "Jakarta", coords: [-6.2088, 106.8456] },
+            bogor: { nama: "Bogor", coords: [-6.5971, 106.8060] },
+            depok: { nama: "Depok", coords: [-6.4025, 106.7942] },
+            tangerang: { nama: "Tangerang", coords: [-6.1783, 106.6319] },
+            bekasi: { nama: "Bekasi", coords: [-6.2383, 106.9756] }
+        };
+
+        const batasJabodetabek = [
+            [-6.65, 106.55],
+            [-6.10, 107.05]
+        ];
+
+        // Inisialisasi peta
+        const map = L.map("map").fitBounds(batasJabodetabek);
+
+        // Basemap OpenStreetMap
+        const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Basemap satelit Esri
+        const satelit = L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            { maxZoom: 19, attribution: "Tiles &copy; Esri" }
+        );
+
+        // Tambahkan marker kota
+        const markers = {};
+        for (const [key, item] of Object.entries(dataKota)) {
+            const marker = L.marker(item.coords)
+                .bindPopup(`<b>${item.nama}</b><br>Koordinat: ${item.coords[0]}, ${item.coords[1]}`)
+                .bindTooltip(item.nama, { permanent: true, direction: "right", offset: [10, 0] })
+                .addTo(map);
+
+            markers[key] = marker;
+        }
+
+        // Layer control & Scale control
+        L.control.layers(
+            { "OpenStreetMap": osm, "Citra Satelit": satelit },
+            null,
+            { position: 'topright' }
+        ).addTo(map);
+
+        L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+
+        // Fungsi navigasi ke kota
+        function pilihKota(kota) {
+            if (dataKota[kota] && markers[kota]) {
+                map.flyTo(dataKota[kota].coords, 12, { duration: 1 });
+                setTimeout(() => {
+                    markers[kota].openPopup();
+                }, 1050);
+            }
+        }
+
+        // Fungsi reset peta ke seluruh Jabodetabek
+        function tampilkanSemua() {
+            map.flyToBounds(batasJabodetabek, { duration: 1 });
+            for (const key in markers) {
+                markers[key].closePopup();
+            }
+        }
+
+        map.on("click", (e) => {
+            L.popup()
+                .setLatLng(e.latlng)
+                .setContent(`Lat: ${e.latlng.lat.toFixed(4)}<br>Lon: ${e.latlng.lng.toFixed(4)}`)
+                .openOn(map);
+        });
+    </script>
+</body>
+</html>
