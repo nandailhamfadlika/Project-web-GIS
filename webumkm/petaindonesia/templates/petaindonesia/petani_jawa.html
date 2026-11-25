@@ -1,0 +1,437 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peta Sebaran Petani dan Lahan Pertanian di Pulau Jawa Tahun 2024</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            margin: 0; 
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f6f8;
+        }
+        header { 
+            height: 54px; 
+            padding: 8px 16px; 
+            background: #1f4e79; 
+            color: #fff;
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+        .header-left h1 { 
+            margin: 0; 
+            font-size: 17px; 
+            font-weight: 600;
+        }
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-controls label {
+            font-size: 13px;
+            color: #e2e8f0;
+        }
+        .header-controls select {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 13px;
+            background: #fff;
+            color: #333;
+            cursor: pointer;
+        }
+        .header-controls a {
+            color: #dbeafe;
+            text-decoration: none;
+            font-size: 13px;
+            margin-left: 8px;
+        }
+        .header-controls a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        #map-container {
+            position: relative;
+            height: calc(100vh - 54px);
+            width: 100%;
+        }
+        #map { 
+            height: 100%; 
+            width: 100%; 
+        }
+
+        /* Info box di pojok kanan atas */
+        .info-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid #bbb;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            min-width: 250px;
+            max-width: 320px;
+            font-size: 12px;
+            line-height: 1.45;
+            color: #222;
+        }
+        .info-card h4 {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            color: #1f4e79;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 4px;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .info-table td {
+            padding: 2px 0;
+            vertical-align: top;
+        }
+        .info-table td:first-child {
+            color: #555;
+            width: 120px;
+        }
+        .info-table td:last-child {
+            font-weight: 600;
+            color: #111;
+        }
+
+        /* Legenda di pojok kanan bawah */
+        .legend-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #bbb;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            font-size: 11.5px;
+            color: #333;
+            line-height: 1.4;
+            max-width: 240px;
+        }
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 12px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 3px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;
+            gap: 7px;
+        }
+        .legend-color {
+            width: 16px;
+            height: 12px;
+            border: 1px solid #666;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        /* Label nama provinsi di atas polygon */
+        .label-provinsi {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-weight: bold !important;
+            font-size: 11px !important;
+            color: #111 !important;
+            text-shadow: 1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff;
+        }
+    </style>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1>Peta Sebaran Petani dan Lahan Pertanian di Pulau Jawa Tahun 2024</h1>
+        </div>
+        <div class="header-controls">
+            <label for="metrikSelect">Warna menurut:</label>
+            <select id="metrikSelect" onchange="gantiMetrik()">
+                <option value="kepadatan" selected>Kepadatan penduduk (jiwa/km²)</option>
+                <option value="jumlah_petani">Jumlah petani (unit, ST2023)</option>
+                <option value="luas_lahan">Luas panen padi / pertanian (ha)</option>
+                <option value="populasi">Populasi penduduk (jiwa)</option>
+                <option value="luas_wilayah">Luas wilayah (km²)</option>
+            </select>
+            <a href="/">Kembali ke Menu</a>
+        </div>
+    </header>
+
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
+
+    <script>
+        const STATIC_URL_BASE = "{% static 'json/' %}";
+        const PROVINSI_CODES = ["31", "32", "33", "34", "35", "36"];
+
+        // Inisialisasi peta Pulau Jawa
+        const map = L.map("map", {
+            center: [-7.2, 110.0],
+            zoom: 7,
+            minZoom: 6
+        });
+
+        // Basemap OSM & Citra Satelit
+        const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        const satelit = L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            { maxZoom: 19, attribution: "Tiles &copy; Esri" }
+        );
+
+        L.control.layers(
+            { "OpenStreetMap": osm, "Citra Satelit": satelit },
+            null,
+            { position: 'topleft' }
+        ).addTo(map);
+
+        L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+
+        // Data penyimpanan
+        let dataPetani = {}; // key: kode
+        let geojsonLayers = {}; // key: kode
+        let geojsonData = {}; // key: kode
+        let layerGroup = L.layerGroup().addTo(map);
+
+        // Info box control (kanan atas)
+        const infoControl = L.control({ position: 'topright' });
+        infoControl.onAdd = function() {
+            this._div = L.DomUtil.create('div', 'info-card');
+            this.update();
+            return this._div;
+        };
+        infoControl.update = function(props) {
+            if (!props) {
+                this._div.innerHTML = `
+                    <h4>Detail Data Provinsi</h4>
+                    <div style="color: #666; font-style: italic;">
+                        Arahkan kursor atau klik pada wilayah provinsi untuk melihat detail statistik.
+                    </div>
+                `;
+                return;
+            }
+            this._div.innerHTML = `
+                <h4>${props.nama} (Kode ${props.kode})</h4>
+                <table class="info-table">
+                    <tr><td>Tahun</td><td>: ${props.tahun}</td></tr>
+                    <tr><td>Luas Wilayah</td><td>: ${props.luas_wilayah_str}</td></tr>
+                    <tr><td>Populasi</td><td>: ${props.populasi_str}</td></tr>
+                    <tr><td>Kepadatan</td><td>: ${props.kepadatan_str}</td></tr>
+                    <tr><td>Jumlah Petani</td><td>: ${props.jumlah_petani_str}</td></tr>
+                    <tr><td>Luas Pertanian</td><td>: ${props.luas_lahan_str}</td></tr>
+                    <tr><td>Rasio Petani/Ha</td><td>: ${props.rasio_petani_lahan_str}</td></tr>
+                </table>
+            `;
+        };
+        infoControl.addTo(map);
+
+        // Legenda control (kanan bawah)
+        const legendControl = L.control({ position: 'bottomright' });
+        legendControl.onAdd = function() {
+            this._div = L.DomUtil.create('div', 'legend-card');
+            return this._div;
+        };
+        legendControl.addTo(map);
+
+        // Definisi konfigurasi skala warna dan bins untuk tiap metrik
+        const metrikConfig = {
+            kepadatan: {
+                judul: "Kepadatan penduduk (jiwa/km²)",
+                // Skala warna oranye - merah
+                bins: [
+                    { min: 5500, label: "> 5.500 (sangat padat)", color: "#bd0026" },
+                    { min: 1600, label: "1.600 - 3.600", color: "#f03b20" },
+                    { min: 1000, label: "1.000 - 1.600", color: "#fd8d3c" },
+                    { min: 500,  label: "500 - 1.000", color: "#fecc5c" },
+                    { min: 0,    label: "< 500 (jarang)", color: "#ffffb2" }
+                ],
+                getValue: (d) => d.kepadatan
+            },
+            jumlah_petani: {
+                judul: "Jumlah petani (unit, ST2023)",
+                // Skala warna hijau
+                bins: [
+                    { min: 4500000, label: "4.500.000 ke atas", color: "#005a32" },
+                    { min: 3000000, label: "3.000.000 - 4.500.000", color: "#238b45" },
+                    { min: 1000000, label: "1.000.000 - 3.000.000", color: "#41ab5d" },
+                    { min: 300000,  label: "300.000 - 1.000.000", color: "#74c476" },
+                    { min: 0,       label: "10.000 - 300.000", color: "#c7e9c0" }
+                ],
+                getValue: (d) => d.jumlah_petani
+            },
+            luas_lahan: {
+                judul: "Luas panen / lahan (ha)",
+                bins: [
+                    { min: 1500000, label: "> 1.500.000 ha", color: "#08519c" },
+                    { min: 1000000, label: "1.000.000 - 1.500.000 ha", color: "#3182bd" },
+                    { min: 200000,  label: "200.000 - 1.000.000 ha", color: "#6baed6" },
+                    { min: 50000,   label: "50.000 - 200.000 ha", color: "#9ecae1" },
+                    { min: 0,       label: "< 50.000 ha", color: "#c6dbef" }
+                ],
+                getValue: (d) => d.luas_lahan
+            },
+            populasi: {
+                judul: "Populasi penduduk (jiwa)",
+                bins: [
+                    { min: 40000000, label: "> 40.000.000 jiwa", color: "#54278f" },
+                    { min: 30000000, label: "30.000.000 - 40.000.000", color: "#756bb1" },
+                    { min: 10000000, label: "10.000.000 - 30.000.000", color: "#9e9ac8" },
+                    { min: 3000000,  label: "3.000.000 - 10.000.000", color: "#bcbddc" },
+                    { min: 0,        label: "< 3.000.000 jiwa", color: "#dadaeb" }
+                ],
+                getValue: (d) => d.populasi
+            },
+            luas_wilayah: {
+                judul: "Luas wilayah (km²)",
+                bins: [
+                    { min: 40000, label: "> 40.000 km²", color: "#8c510a" },
+                    { min: 30000, label: "30.000 - 40.000 km²", color: "#bf812d" },
+                    { min: 8000,  label: "8.000 - 30.000 km²", color: "#dfc27d" },
+                    { min: 2000,  label: "2.000 - 8.000 km²", color: "#f6e8c3" },
+                    { min: 0,     label: "< 2.000 km²", color: "#f5f5f5" }
+                ],
+                getValue: (d) => d.luas_wilayah
+            }
+        };
+
+        function hitungWarna(val, metrikKey) {
+            const cfg = metrikConfig[metrikKey];
+            for (const b of cfg.bins) {
+                if (val >= b.min) return b.color;
+            }
+            return "#cccccc";
+        }
+
+        function updateLegenda(metrikKey) {
+            const cfg = metrikConfig[metrikKey];
+            let html = `<div class="legend-title">${cfg.judul}</div>`;
+            cfg.bins.forEach(b => {
+                html += `
+                    <div class="legend-item">
+                        <span class="legend-color" style="background:${b.color};"></span>
+                        <span>${b.label}</span>
+                    </div>
+                `;
+            });
+            legendControl._div.innerHTML = html;
+        }
+
+        // Muat Data JSON Non-Spatial & File GeoJSON Polygon
+        async function init() {
+            try {
+                // 1. Muat data non-spatial petani_jawa.json
+                const resPetani = await fetch(STATIC_URL_BASE + "petani_jawa.json");
+                const listPetani = await resPetani.json();
+                listPetani.forEach(item => {
+                    dataPetani[item.kode] = item;
+                });
+
+                // 2. Muat setiap GeoJSON polygon
+                for (const kode of PROVINSI_CODES) {
+                    const resGeo = await fetch(STATIC_URL_BASE + `${kode}.geojson`);
+                    const geojson = await resGeo.json();
+                    geojsonData[kode] = geojson;
+                }
+
+                renderPeta();
+            } catch (err) {
+                console.error("Gagal memuat data:", err);
+                alert("Terjadi kesalahan memuat data GeoJSON atau petani_jawa.json: " + err.message);
+            }
+        }
+
+        function renderPeta() {
+            layerGroup.clearLayers();
+            const currentMetrik = document.getElementById("metrikSelect").value;
+            const cfg = metrikConfig[currentMetrik];
+
+            updateLegenda(currentMetrik);
+
+            const allBounds = L.latLngBounds([]);
+
+            PROVINSI_CODES.forEach(kode => {
+                const geojson = geojsonData[kode];
+                const stats = dataPetani[kode];
+                if (!geojson || !stats) return;
+
+                const nilai = cfg.getValue(stats);
+                const fillColor = hitungWarna(nilai, currentMetrik);
+
+                const layer = L.geoJSON(geojson, {
+                    style: {
+                        fillColor: fillColor,
+                        weight: 1.5,
+                        opacity: 1,
+                        color: "#ffffff",
+                        fillOpacity: 0.8
+                    },
+                    onEachFeature: function(feature, l) {
+                        // Tooltip nama provinsi permanen di tengah
+                        l.bindTooltip(stats.nama, {
+                            permanent: true,
+                            direction: "center",
+                            className: "label-provinsi"
+                        });
+
+                        // Event mouseover, mouseout, click
+                        l.on({
+                            mouseover: function(e) {
+                                const target = e.target;
+                                target.setStyle({
+                                    weight: 3,
+                                    color: "#333333",
+                                    fillOpacity: 0.95
+                                });
+                                target.bringToFront();
+                                infoControl.update(stats);
+                            },
+                            mouseout: function(e) {
+                                layer.resetStyle(e.target);
+                                // Jangan langsung kosongkan jika ingin tetap terbaca
+                            },
+                            click: function(e) {
+                                infoControl.update(stats);
+                                map.fitBounds(e.target.getBounds());
+                            }
+                        });
+                    }
+                });
+
+                layerGroup.addLayer(layer);
+                allBounds.extend(layer.getBounds());
+            });
+
+            if (allBounds.isValid()) {
+                map.fitBounds(allBounds, { padding: [20, 20] });
+            }
+        }
+
+        function gantiMetrik() {
+            renderPeta();
+        }
+
+        init();
+    </script>
+</body>
+</html>
